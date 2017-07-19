@@ -1,0 +1,24 @@
+x y
+
+procedure soma
+    
+;    x+= 1
+;    y += 4
+    read x
+    if(x <= 2) then
+        x += 1
+    else
+        x -= 1
+    fi (x < 3) 
+    write x
+;    vet[0] += x
+;    total += x*y
+;    total += (x + y) * (x - y) + (x + y)  ;verificar erro de ordem de precedência
+;    total += x*y+x ;verificar erro de ordem de precedência
+;    call sub
+;    total += x + y
+;    write total
+
+;procedure sub
+;    total += 1
+;    x -= total

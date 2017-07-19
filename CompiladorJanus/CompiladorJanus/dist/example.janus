@@ -1,0 +1,15 @@
+x y n
+procedure main
+    n += 5
+    call fib
+ 
+procedure fib
+    if n = 0 then  
+        x += 1     
+        y += 1     
+    else 
+        n -= 1     
+        call fib   
+        x += y     
+        x : y      
+    fi x = y       

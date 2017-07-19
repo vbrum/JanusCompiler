@@ -1,0 +1,58 @@
+num
+try
+z
+i
+k
+n
+fact[20]
+
+procedure main
+    num += 840
+    n += 20
+    call factor
+    
+
+procedure factor
+    from (try = 0) & (num > 1)
+    loop call nexttry
+        from fact[i] # try
+        loop i += 1
+            fact[i] += try
+            z += num/try
+            z : num
+            z -= num*try
+        until (num\try) # 0
+    until (try*try) > num
+
+    if num # 1 then
+        i += 1
+        fact[i] : num
+    else
+        num -= 1
+    fi fact[i] # fact[i-1]
+
+    if (fact[i-1]*fact[i-1]) < fact[i] then
+        from (try*try) > fact[i]
+        loop uncall nexttry
+        until try = 0
+    else
+        try -= fact[i-1]
+    fi (fact[i-1]*fact[i-1]) < fact[i]
+    ;call imprime
+    call zeroi
+
+procedure zeroi
+    from fact[i+1] = 0
+    loop i -= 1
+    until i = 0
+
+procedure nexttry
+    try += 2
+    if try = 4 then
+        try -= 1
+    fi try = 3
+
+
+
+
+

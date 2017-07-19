@@ -1,0 +1,10 @@
+x y
+procedure teste
+	x += 1
+	y += 1
+	if x = y then
+		x += 1
+	fi x < 1
+    
+    
+    

@@ -1,0 +1,47 @@
+list[10]
+perm[10]
+n
+i j
+procedure main
+    n += 10
+    call readlist
+    call makeidperm
+    call sort
+    call writelist
+
+procedure sort   
+    from i=0
+    loop j += n-2
+        from j=n-2
+        loop if list[j] > list[j+1] then 
+                  list[j] : list[j+1]
+                  perm[j] : perm[j+1]
+             fi perm[j] > perm[j+1]
+             j -= 1
+        until j=i-1
+        j -= i-1
+        i += 1
+    until i=n-1
+    i -= n-1
+
+procedure makeidperm
+    from i = 0
+    loop perm[i] += i
+        i += 1
+    until i = n
+    i -= n
+
+procedure readlist
+    from i = 0
+    loop read list[i]
+        i += 1
+    until i = n
+    i -= n
+
+procedure writelist
+    from i = 0
+    loop write list[i]
+        i += 1
+    until i = n
+    i -= n
+        

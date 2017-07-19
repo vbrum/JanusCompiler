@@ -1,0 +1,30 @@
+num r z bit
+
+procedure main
+    num += 81
+    ;r += 5
+    call root
+
+procedure root
+    bit += 1
+    from bit = 1
+    loop
+        call doublebit
+    until (bit*bit) > num
+    from (bit*bit) > num
+    do 
+        uncall doublebit
+        if ((r+bit)*(r+bit)) <= num then
+             r += bit
+        fi ((r/bit)\2) # 0
+    until bit = 1
+    bit -= 1
+    num -= r*r
+
+procedure doublebit
+    z+= bit
+    bit += z
+    z -= bit/2
+    
+    
+    

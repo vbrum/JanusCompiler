@@ -1,0 +1,328 @@
+package teste;
+
+import java_cup.runtime.*;
+import java.util.*;
+import java.io.*;
+import syntaxTree.*;
+import Visitor.*;
+import newpackage.*;
+
+scan with {: 
+    return lexer.next_token(); 
+:};
+
+parser code{:
+LexicalAnalyzer lexer;
+public boolean errorDetected;
+public String expecting = "";
+public String errorMessage = "";
+public Parser(LexicalAnalyzer lex) { super(lex); lexer = lex; errorDetected = false;}
+public void syntax_error(Symbol cur_token) { 
+    errorDetected = true;
+    System.err.println("Error at line " + cur_token.left + ", column " + cur_token.right + ":");
+    errorMessage = "Error at line " + cur_token.left + ", column " + cur_token.right + ":\n";
+}
+
+public void report_error(String message, Object info){
+    Symbol s = (Symbol) info;
+    Token t = (Token) s.value;
+    if(s.sym == 40){
+        errorMessage += "Unexpected: "  + t.toString() + "\nIllegal character.";
+    } else {
+        errorMessage += "Unexpected: "  + t.toString() + "\n";
+        if(!message.isEmpty()){
+            errorMessage +=  message;
+        }
+    }
+}
+
+
+:}; 
+
+
+terminal Token PROCEDURE, NUM, IF, THEN, ELSE, FI, FROM, DO, LOOP, UNTIL, CALL, UNCALL, READ, WRITE, IDENT;
+terminal Token PE, ME, XE, SWAP, LEFTPAREN, RIGHTPAREN, LEFTBRACKET, RIGHTBRACKET;
+terminal Token PLUS, MINUS, MULT, DIV, MOD, NOT, AND, OR, XOR, LT, LEQT, GT, GEQT, EQ, NOTEQ;
+terminal Token ILLEGAL_CHAR;
+
+
+/*Nonterminals*/
+non terminal Program program;
+non terminal DeclList decllist;
+non terminal ProcedureList procedurelist;
+non terminal Proc proc;
+non terminal Decl decl;
+non terminal Statement statement;
+non terminal StatementList statementlist;
+non terminal LValue lvalue;
+non terminal Identifier identifier;
+non terminal Exp exp;
+non terminal Exp1 exp1;
+non terminal Exp2 exp2;
+non terminal Exp3 exp3;
+non terminal Exp4 exp4;
+
+
+precedence right AND, OR, XOR, LT, LEQT, GT, GEQT, EQ, NOTEQ;
+precedence right PLUS, MINUS;
+precedence right DIV, MULT, MOD;
+
+
+start with program;
+
+program ::= decl:d decllist:dl proc:pr procedurelist:pl
+            {: 
+                if(dl == null)
+                    dl = new DeclList();
+                dl.addElement(d);
+                if(pl == null)
+                    pl = new ProcedureList();
+                pl.addElement(pr);
+                Program p = new Program(dl,pl);
+                RESULT = p;
+            :}
+            ;
+            
+decllist ::= decl:d decllist:dl
+             {: 
+                    if(dl == null)
+                        dl = new DeclList();
+                    dl.addElement(d);
+                    RESULT = dl;
+             :}
+          | /*vazio*/
+            {:
+                    RESULT = new DeclList();
+            :}
+          ;
+
+procedurelist ::= proc:p procedurelist:pl
+                  {:
+                        if(pl == null)
+                            pl = new ProcedureList();
+                        pl.addElement(p);
+                        RESULT = pl;
+                  :}
+               | /*vazio*/
+                 {:
+                        RESULT = new ProcedureList();
+                 :}
+               ;
+
+proc ::= PROCEDURE identifier:id statement:s statementlist:l
+         {:
+                if(l == null)
+                    l = new StatementList();
+                l.addElement(s);
+                RESULT = new Proc(id,l);
+         :}
+        ;
+
+decl ::= identifier:id
+         {:
+                RESULT = new IntDecl(id);
+         :}
+      |  identifier:id LEFTBRACKET NUM:n RIGHTBRACKET
+         {:
+                Integer x = (Integer) n.getValue();
+                RESULT = new IntArrayDecl(id,x.intValue());
+         :}
+      ;
+
+statement ::= IF:i exp:e1 THEN statementlist:l FI:f exp:e2
+              {:
+                    RESULT = new IfStmt(e1,e2,l,i.getLine(),i.getColumn(),f.getLine(),f.getColumn());
+              :}
+           |  IF:i exp:e1 THEN statementlist:l1 ELSE statementlist:l2 FI:f exp:e2
+              {:
+                    RESULT = new IfElseStmt(e1,e2,l1,l2,i.getLine(),i.getColumn(),f.getLine(),f.getColumn());
+              :}
+           |  FROM:f exp:e1 DO statementlist:l UNTIL:u exp:e2
+              {:
+                    RESULT = new DoStmt(e1,e2,l,f.getLine(),f.getColumn(),u.getLine(),u.getColumn());
+              :}
+           |  FROM:f exp:e1 LOOP statementlist:l UNTIL:u exp:e2
+              {:
+                    RESULT = new LoopStmt(e1,e2,l,f.getLine(),f.getColumn(),u.getLine(),u.getColumn());
+              :}
+           |  FROM:f exp:e1 DO statementlist:l1 LOOP statementlist:l2 UNTIL:u exp:e2
+              {:
+                    RESULT = new DoLoopStmt(e1,e2,l1,l2,f.getLine(),f.getColumn(),u.getLine(),u.getColumn());
+              :}
+           |  CALL identifier:id
+              {:
+                    RESULT = new CallStmt(id);
+              :}
+           |  UNCALL identifier:id
+              {:
+                    RESULT = new UncallStmt(id);
+              :}
+           |  READ lvalue:l 
+              {:
+                    RESULT = new ReadStmt(l);
+              :}
+           |  WRITE lvalue:l
+              {:
+                    RESULT = new WriteStmt(l);
+              :}
+           |  lvalue:lv PE:p exp:e
+              {:
+                    RESULT = new PEModStmt(lv,e,p.getLine(),p.getColumn());
+              :}
+           |  lvalue:lv ME:m exp:e
+              {:
+                    RESULT = new MEModStmt(lv,e,m.getLine(),m.getColumn());
+              :}
+           |  lvalue:lv XE:x exp:e
+              {:
+                    RESULT = new XEModStmt(lv,e,x.getLine(),x.getColumn());
+              :}
+           |  lvalue:lv1 SWAP:s lvalue:lv2
+              {:
+                    RESULT = new SwapStmt(lv1,lv2,s.getLine(),s.getColumn());
+              :}
+           ;
+
+statementlist ::= statement:s statementlist:sl
+                  {:
+                        if(sl == null)
+                            sl = new StatementList();
+                        sl.addElement(s);
+                        RESULT = sl;
+                  :}
+               | /*vazio*/
+                 {:
+                        RESULT = new StatementList();
+                 :}
+               ;
+
+            
+exp ::= exp4:e
+     {:
+            RESULT = e;
+     :}
+     ;
+
+exp4 ::= exp4:m LT:lt exp3:e
+              {:
+                     RESULT = new LessThan(m,e,lt.getLine(),lt.getColumn());
+              :}
+            |  exp4:m LEQT:le exp3:e 
+              {:
+                     RESULT = new LessEqThan(m,e,le.getLine(),le.getColumn());
+              :}
+            |  exp4:m GT:gt exp3:e  
+              {:
+                     RESULT = new GreaterThan(m,e,gt.getLine(),gt.getColumn());
+              :}
+            |  exp4:m GEQT:ge exp3:e    
+              {:
+                     RESULT = new GreaterEqThan(m,e,ge.getLine(),ge.getColumn());
+              :}
+            |  exp4:m EQ:eq exp3:e
+              {:
+                     RESULT = new Equal(m,e,eq.getLine(),eq.getColumn());
+              :}
+            |  exp4:m NOTEQ:neq exp3:e
+              {:
+                     RESULT = new NotEqual(m,e,neq.getLine(),neq.getColumn());
+              :}
+            |  exp3:e
+              {:
+                     RESULT = e;
+              :}
+            ;
+
+
+exp3 ::= exp3:m PLUS:p exp2:e
+        {:
+                RESULT = new Plus(m,e,p.getLine(),p.getColumn());
+        :}
+      |  exp3:m MINUS:mi exp2:e
+        {:
+                RESULT = new Minus(m,e,mi.getLine(),mi.getColumn());
+        :}
+      |  exp2:e
+        {:
+                RESULT = e;
+        :}
+      ;
+
+
+exp2 ::= exp2:m MULT:mul exp1:e
+        {:
+                RESULT = new Mult(m,e,mul.getLine(),mul.getColumn());
+        :}
+      |  exp2:m DIV:d exp1:e
+        {:
+                RESULT = new Div(m,e,d.getLine(),d.getColumn());
+        :}
+      |  exp2:m MOD:mod exp1:e
+        {:
+                RESULT = new Mod(m,e,mod.getLine(),mod.getColumn());
+        :}
+      |  exp2:m AND:a exp1:e
+        {:
+                RESULT = new And(m,e,a.getLine(),a.getColumn());
+        :}
+      |  exp2:m OR:o exp1:e
+        {:
+                RESULT = new Or(m,e,o.getLine(),o.getColumn());
+        :}
+      |  exp2:m XOR:x exp1:e
+        {:
+                RESULT = new Xor(m,e,x.getLine(),x.getColumn());
+        :}
+      |  exp1:e
+        {:
+                RESULT = e;
+        :}
+      ;
+
+
+exp1 ::= LEFTPAREN exp:e RIGHTPAREN
+        {:
+                RESULT = new BracketedExp(e);
+        :}
+      |  NOT:e exp:e1
+        {:
+                RESULT = new Not(e1,e.getLine(),e.getColumn());
+        :}
+      |  MINUS:m exp:e 
+        {:
+                RESULT = new UnaryMinus(e,m.getLine(),m.getColumn());
+        :}
+      |  identifier:id
+        {:
+                RESULT = new IntVar(id);
+        :}
+      |  identifier:id LEFTBRACKET exp:e RIGHTBRACKET 
+        {:
+                RESULT = new IntArray(id,e);
+        :}
+      |  NUM:i
+        {:
+                Integer x = (Integer) i.getValue();
+                //System.out.println(x.intValue() + " " + i.getLine() + " " + i.getColumn());
+                RESULT = new IntLiteral(x);
+        :}
+      ;
+      
+
+lvalue ::= identifier:id
+           {:
+                RESULT = new IntVar(id);
+           :}
+        | identifier:id LEFTBRACKET exp:e RIGHTBRACKET
+          {:
+                RESULT = new IntArray(id,e);
+          :}
+        ;
+
+identifier ::= IDENT:i
+               {:
+                    String s = (String) i.getValue();
+                    RESULT = new Identifier(s, i.getLine(), i.getColumn());
+               :}
+            ;
+

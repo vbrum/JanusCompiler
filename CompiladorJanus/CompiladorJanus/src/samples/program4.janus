@@ -1,0 +1,10 @@
+x y
+
+procedure calcular
+    read x
+    call dobro
+    write x
+
+procedure dobro
+    y += x
+    x += y
